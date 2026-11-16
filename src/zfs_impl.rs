@@ -15,9 +15,12 @@ use std::io::{Read, Seek};
 use std::path::Path;
 
 /// A resolved object together with the slot of its dataset.
+///
+/// The node is boxed: it is several times larger than the records of the other
+/// filesystems, and every `DetectedFile` would otherwise carry its size.
 #[derive(Debug, Clone)]
 pub struct ZfsFileRecord {
-    pub node: Node,
+    pub node: Box<Node>,
 }
 
 impl ZfsFileRecord {
@@ -196,7 +199,7 @@ impl<T: Read + Seek> Filesystem for ZfsFs<T> {
 
     fn get_file(&mut self, file_id: u64) -> Result<Self::FileType, Box<dyn Error>> {
         Ok(ZfsFileRecord {
-            node: self.zfs.get_node(file_id)?,
+            node: Box::new(self.zfs.get_node(file_id)?),
         })
     }
 
@@ -214,7 +217,7 @@ impl<T: Read + Seek> Filesystem for ZfsFs<T> {
         _file_id: u64,
     ) -> Result<Self::FileType, Box<dyn Error>> {
         Ok(ZfsFileRecord {
-            node: self.zfs.resolve_path(path)?,
+            node: Box::new(self.zfs.resolve_path(path)?),
         })
     }
 
